@@ -1,0 +1,27 @@
+{
+	"name": "vue-route-manager",
+	"version": "0.0.2",
+	"main": "src/main.js",
+	"scripts": {
+		"serve": "vue-cli-service serve",
+		"build": "vue-cli-service build",
+		"lint": "vue-cli-service lint"
+	},
+	"dependencies": {},
+	"devDependencies": {
+		"@vue/cli-plugin-babel": "~4.5.0",
+		"@vue/cli-plugin-eslint": "~4.5.0",
+		"@vue/cli-service": "~4.5.0",
+		"babel-eslint": "^10.1.0",
+		"core-js": "^3.6.5",
+		"eslint": "^6.7.2",
+		"eslint-plugin-vue": "^6.2.2",
+		"typescript": "^4.0.2",
+		"vue": "^2.6.11",
+		"vue-router": "^3.5.2"
+	},
+	"peerDependencies": {
+		"core-js": "^3.6.4",
+		"vue": "^2.6.11"
+	}
+}
