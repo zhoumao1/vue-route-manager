@@ -127,7 +127,7 @@ exprot default {
 
 ## Methods
 
-#### setHome(name)
+### setHome(name)
 
 - **name**
   - Type: `String`
@@ -135,15 +135,14 @@ exprot default {
 
 设置需要最终返回的页面路由name
 
-#### backHome()
+### backHome()
 
 回退到`home`页, 通过`setHome`来设置`home`
 
-#### backByName(name)
+### backByName(name)
 
 - **name**
-
-  - Type: `String`
+- Type: `String`
   - `name`所指路由列表当中的 name `{ path: '/page_3', name: 'page-3', component: Page-3 }`
 
 回退到指定`name`的页面
