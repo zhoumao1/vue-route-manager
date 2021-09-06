@@ -5,15 +5,17 @@
 项目当中可能会遇到一些跳转的问题, 例如
 
 ```
-A --> B --> C --> D
- |--> B-1 ------> D 
+A --> B --> C --> D --返回-> A // 情况一
+ |--> B-1 ------> D --返回-> A // 情况二
+ |--> B-2 --> C-2 -->C-2-1 --> D --返回-> A // 情况三
 ```
 
-此时需要从 D 返回的 A, 有两种情况
+此时需要从 D 返回的 A, 有三种情况
 1. 调用`router.go(-3)`
 2. 调用`router.go(-2)`
+3. 调用`router.go(-4)`
 
-往常的做法可能会**区分渠道**来源(B/B-1), 但是当需要处理更多的渠道时, 显得有些乏力
+往常的做法可能会**区分渠道**来源(B/B-1/B-2), 但是当需要处理更多的渠道时, 显得有些乏力
 
 此时可以使用`RouteManager`插件来处理这一系列复杂的问题
 
@@ -130,13 +132,26 @@ exprot default {
 </script>
 ```
 
+## 解决问题
+
+```
+A --> B --> C --> D --返回-> A // 情况一
+ |--> B-1 ------> D --返回-> A // 情况二
+ |--> B-2 --> C-2 -->C-2-1 --> D --返回-> A // 情况三
+```
+
+首先在**A页面**调用`this.$RouteManager.setHome('page-A')`或者`this.$RouteManager.setHome()`
+
+接着**B页面**需要返回的时候调用`this.$RouteManager.backHome()`即可
+
 ## Methods
 
-### setHome(name)
+### setHome([name])
 
 - **name**
   - Type: `String`
   - `name`所指路由列表当中的 name `{ path: '/page_3', name: 'page-3', component: Page-3 }`
+  - Default: 当前路由的name
 
 设置需要最终返回的页面路由name
 
