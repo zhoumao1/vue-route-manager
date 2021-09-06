@@ -22,7 +22,7 @@ A --> B --> C --> D --返回-> A // 情况一
 ## 入门
 
 ```shell
-npm i vue-route-manarge -S
+npm i vue-route-manager -S
 ```
 
 ```js
