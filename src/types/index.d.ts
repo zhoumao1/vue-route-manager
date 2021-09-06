@@ -1,4 +1,3 @@
-import Vue from "vue";
 import VueRouter from "vue-router";
 
 export type ManagerOptions = {
@@ -7,19 +6,21 @@ export type ManagerOptions = {
 
 	/** 是否开启打印信息 */
 	debug: boolean
+
 };
 
 export declare class RouteManagerInstance{
-	constructor(options: ManagerOptions);
+	// constructor(options: ManagerOptions)
 
 	/** 根据 route name 返回到指定页面 */
-	backByName(name: string): void
+	backByName(name: string): void;
 
 	/** 返回到首页, 需要预先设置 home (用 setHome 方法设置 home name) */
-	backHome(): void
+	backHome(): void;
 
-	/** 设置 根路由的name */
-	setHome(name: string): void
+	/** 设置 根路由的name, 默认为当前路由 name */
+	// @ts-ignore
+	setHome(name?: string): void;
 }
 
 

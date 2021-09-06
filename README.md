@@ -1,16 +1,21 @@
 # 路由管理器
+
 记录每次跳转的`vue-route name`, 内置了一些处理回退的方法, 方便回退到**指定页面**
 
 项目当中可能会遇到一些跳转的问题, 例如
 
 ```
 A --> B --> C --> D
-此时需要从 D 返回的 A, 通常写法 router.go(-3)
-
-如果此时也遇到 B --> C --> D 此时 router.go(-3) 将不再适用
+ |--> B-1 ------> D 
 ```
 
-当然此插件就是为了解决这种花式回退
+此时需要从 D 返回的 A, 有两种情况
+1. 调用`router.go(-3)`
+2. 调用`router.go(-2)`
+
+往常的做法可能会**区分渠道**来源(B/B-1), 但是当需要处理更多的渠道时, 显得有些乏力
+
+此时可以使用`RouteManager`插件来处理这一系列复杂的问题
 
 ## 入门
 
@@ -142,7 +147,7 @@ exprot default {
 ### backByName(name)
 
 - **name**
-- Type: `String`
+  - Type: `String`
   - `name`所指路由列表当中的 name `{ path: '/page_3', name: 'page-3', component: Page-3 }`
 
 回退到指定`name`的页面

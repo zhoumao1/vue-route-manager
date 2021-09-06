@@ -13,7 +13,12 @@ export class RouteManager {
 		/**@type {String | null}*/
 		this.homeName = null
 
+		/**@type {string|null}*/
 		this.firstName = null
+
+		/**@type {string|null}*/
+		this.currentRouteName = null
+
 		// 是否为单页面
 		// this.isSingleRoute = true
 		setTimeout(() => {
@@ -27,6 +32,7 @@ export class RouteManager {
 		this.$router.afterHooks.unshift((to, from) => {
 			this.debug && console.log(this.routePathList, '前')
 			// next()
+			this.currentRouteName = to.name
 
 			if (to.name === from.name) {
 				this.debug && console.log('replace')
@@ -57,13 +63,14 @@ export class RouteManager {
 	 * @param {boolean}  is_init  是否需要初始化
 	 */
 	recordPath(is_init) {
+		let routeName = this.$app.$route.name
 		if (is_init) {
-			if (!this.routePathList.includes(this.$app.$route.name)) {
-				this.routePathList.push(this.$app.$route.name)
+			if (!this.routePathList.includes(routeName)) {
+				this.routePathList.push(routeName)
 			}
 			return;
 		}
-		this.routePathList.push(this.$app.$route.name)
+		this.routePathList.push(routeName)
 	}
 
 	/**
@@ -96,7 +103,7 @@ export class RouteManager {
 	 * @param {string}   name
 	 */
 	setHome(name) {
-		this.homeName = name
+		this.homeName = name ? name:this.currentRouteName
 	}
 
 }
