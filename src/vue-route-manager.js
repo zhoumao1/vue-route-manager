@@ -1,6 +1,6 @@
 export class RouteManager {
 	constructor({ router, debug }) {
-		if(!router){
+		if (!router) {
 			throw Error('\n vue-router is necessary. \n\n');
 		}
 		this.debug = debug
@@ -26,9 +26,28 @@ export class RouteManager {
 			this.$app = this.$router.app
 			this.init()
 		})
+
+		this.tempStorKey = 'tempRouteManagerStor'
 	}
 
 	init() {
+		this._refreshStateArr = ['__beforeunload', '__unload']
+		window.onbeforeunload = () => {
+			localStorage.setItem('__beforeunload', 'true')
+			this.setTempStor()
+		}
+		window.onunload = () => {
+			localStorage.setItem('__unload', 'true')
+		}
+		window.onload = () => {
+			let arr = this._refreshStateArr.map(_ => localStorage.getItem(_) === 'true')
+			if (arr.every(_ => _)) {
+				Object.assign(this, this.getTempStor())
+				this._refreshStateArr.forEach(item => {
+					localStorage.removeItem(item)
+				})
+			}
+		}
 		this.$router.afterHooks.unshift((to, from) => {
 			this.debug && console.log(this.routePathList, '前')
 			// next()
@@ -51,6 +70,26 @@ export class RouteManager {
 			}
 			this.debug && console.log(this.routePathList, '后')
 		})
+	}
+
+	// 设置临时仓库
+	setTempStor(){
+		/**
+		 * @typedef tempStorProps
+		 * @property   {Array}  routePathList
+		 * @property   {string}  homeName
+		 * @property   {string}  firstName
+		 */
+		sessionStorage.setItem(this.tempStorKey, JSON.stringify({
+			routePathList: this.routePathList,
+			homeName: this.homeName || this.currentRouteName,
+			firstName: this.firstName
+		}))
+	}
+
+	/**@return {tempStorProps}*/
+	getTempStor(){
+		return JSON.parse(sessionStorage.getItem(this.tempStorKey))
 	}
 
 	shiftRoutePath() {
