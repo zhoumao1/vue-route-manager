@@ -1,3 +1,13 @@
+import config from '@/plugins/router-cache/config/config';
+import history from '@/plugins/router-cache/history';
+function getKey(src) {
+	return src.replace(/[xy]/g, function (c) {
+		let r = (Math.random() * 16) | 0;
+		let v = c === 'x' ? r : (r & 0x3) | 0x8;
+		return v.toString(16);
+	});
+}
+
 export class RouteManager {
 	constructor({ router, debug }) {
 		if (!router) {
@@ -32,6 +42,7 @@ export class RouteManager {
 
 	init() {
 		this._refreshStateArr = ['__beforeunload', '__unload']
+
 		window.onbeforeunload = () => {
 			localStorage.setItem('__beforeunload', 'true')
 			this.setTempStor()
@@ -48,13 +59,26 @@ export class RouteManager {
 				})
 			}
 		}
-		this.$router.afterHooks.unshift((to, from) => {
-			this.debug && console.log(this.routePathList, '前')
-			// next()
-			this.currentRouteName = to.name
 
-			if (to.name === from.name) {
+		const routerReplace = this.$router.replace.bind(this.$router);
+		let isReplace = false
+		this.$router.replace = (location, onResolve, onReject) => {
+			isReplace = true
+			if (onResolve || onReject) {
+				return routerReplace(location, onResolve, onReject);
+			}
+			return routerReplace(location)
+				.catch(error => error);
+		};
+
+		this.$router.afterHooks.unshift((to, from) => {
+			this.currentRouteName = this.$app.$route.name
+			this.debug && console.log(this.routePathList, '前')
+			if (isReplace) {
 				this.debug && console.log('replace')
+				isReplace = false
+				let len = this.routePathList.length
+				this.routePathList.splice(len === 0 ? 0:len - 1, 1, to.name)
 				return
 			}
 			if (!this.routePathList.length) {
@@ -66,7 +90,7 @@ export class RouteManager {
 			if (!this.routePathList.includes(to.name)) {
 				this.recordPath(!from.name)
 			} else {
-				this.shiftRoutePath()
+				this.shiftRoutePath(from.name)
 			}
 			this.debug && console.log(this.routePathList, '后')
 		})
@@ -82,7 +106,7 @@ export class RouteManager {
 		 */
 		sessionStorage.setItem(this.tempStorKey, JSON.stringify({
 			routePathList: this.routePathList,
-			homeName: this.homeName || this.currentRouteName,
+			homeName: this.homeName || this.firstName,
 			firstName: this.firstName
 		}))
 	}
@@ -139,7 +163,7 @@ export class RouteManager {
 
 	/**
 	 * 设置 根路由的name
-	 * @param {string}   name
+	 * @param {string}   [name]
 	 */
 	setHome(name) {
 		this.homeName = name ? name:this.currentRouteName

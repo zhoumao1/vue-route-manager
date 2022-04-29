@@ -11,7 +11,8 @@ export type ManagerOptions = {
 
 export declare class RouteManagerInstance{
 	// constructor(options: ManagerOptions)
-
+	routePathList: Array;
+	
 	/** 根据 route name 返回到指定页面 */
 	backByName(name: string): void;
 
