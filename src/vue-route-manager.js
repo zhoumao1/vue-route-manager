@@ -40,6 +40,13 @@ export class RouteManager {
 		this.tempStorKey = 'tempRouteManagerStor'
 	}
 
+	static getInstance(params) {
+		if (!RouteManager.instance) {
+			RouteManager.instance = new RouteManager(params);
+		}
+		return RouteManager.instance;
+	}
+
 	init() {
 		this._refreshStateArr = ['__beforeunload', '__unload']
 
@@ -71,7 +78,35 @@ export class RouteManager {
 				.catch(error => error);
 		};
 
-		this.$router.afterHooks.unshift((to, from) => {
+		this.$router.beforeHooks.push((to, from, next) => {
+			this.currentRouteName = this.$app.$route.name
+			this.debug && console.log(this.routePathList, '前')
+			if (isReplace) {
+				this.debug && console.log('replace')
+				isReplace = false
+				let len = this.routePathList.length
+				this.routePathList.splice(len === 0 ? 0:len - 1, 1, to.name)
+				next()
+				return
+			}
+			if (!this.routePathList.length) {
+				this.firstName = this.$app.$route.name
+				this.recordPath(!from.name)
+				this.debug && console.log(this.routePathList, '初次')
+				next()
+				return;
+			}
+
+			if (!this.routePathList.includes(to.name)) {
+				this.recordPath(!from.name)
+			} else {
+				this.shiftRoutePath(from.name)
+			}
+			this.debug && console.log(this.routePathList, '后')
+			sessionStorage.setItem('ROUTE_STOCK', JSON.stringify(this.routePathList))
+			next()
+		})
+		/*this.$router.afterHooks.unshift((to, from) => {
 			this.currentRouteName = this.$app.$route.name
 			this.debug && console.log(this.routePathList, '前')
 			if (isReplace) {
@@ -87,13 +122,15 @@ export class RouteManager {
 				this.debug && console.log(this.routePathList, '初次')
 				return;
 			}
+			console.log(this.routePathList, to.name)
+
 			if (!this.routePathList.includes(to.name)) {
 				this.recordPath(!from.name)
 			} else {
 				this.shiftRoutePath(from.name)
 			}
 			this.debug && console.log(this.routePathList, '后')
-		})
+		})*/
 	}
 
 	// 设置临时仓库
@@ -124,16 +161,18 @@ export class RouteManager {
 	/**
 	 * 记录路由路径
 	 * @param {boolean}  is_init  是否需要初始化
+	 * @param {string}  [name]  添加的路径
 	 */
-	recordPath(is_init) {
-		let routeName = this.$app.$route.name
-		if (is_init) {
-			if (!this.routePathList.includes(routeName)) {
-				this.routePathList.push(routeName)
-			}
-			return;
-		}
-		this.routePathList.push(routeName)
+	recordPath(is_init, name) {
+		let routeName = name || this.$app.$route.name
+		let s = new Set(this.routePathList)
+		// if (is_init) {
+		// 	s.add(routeName)
+		// 	this.routePathList = [...s]
+		// 	return;
+		// }
+		s.add(routeName)
+		this.routePathList = [...s]
 	}
 
 	/**
@@ -149,7 +188,7 @@ export class RouteManager {
 		reverseArr.splice(0, index)
 		this.$router.go(-(index))
 		this.routePathList.splice(0, Infinity, ...reverseArr.reverse())
-		this.routePathList.push(name)
+		this.recordPath(false, name)
 	}
 
 	/**
