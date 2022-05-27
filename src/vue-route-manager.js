@@ -1,11 +1,9 @@
-import config from '@/plugins/router-cache/config/config';
-import history from '@/plugins/router-cache/history';
-function getKey(src) {
-	return src.replace(/[xy]/g, function (c) {
-		let r = (Math.random() * 16) | 0;
-		let v = c === 'x' ? r : (r & 0x3) | 0x8;
-		return v.toString(16);
-	});
+function log(str, any_log) {
+	console.log(`%c RouteManager %c ${ str } `,
+		'background:#35495e ; padding: 1px; border-radius: 3px 0 0 3px;  color: #fff',
+		'background:#41b883 ; padding: 1px; border-radius: 0 3px 3px 0;  color: #fff',
+		any_log
+	)
 }
 
 export class RouteManager {
@@ -38,6 +36,8 @@ export class RouteManager {
 		})
 
 		this.tempStorKey = 'tempRouteManagerStor'
+		/**@type {'push'|'back'|'replace'|'forward'}*/
+		this.routeAction = ''
 	}
 
 	static getInstance(params) {
@@ -71,6 +71,7 @@ export class RouteManager {
 		let isReplace = false
 		this.$router.replace = (location, onResolve, onReject) => {
 			isReplace = true
+			this.routeAction = 'replace'
 			if (onResolve || onReject) {
 				return routerReplace(location, onResolve, onReject);
 			}
@@ -78,32 +79,38 @@ export class RouteManager {
 				.catch(error => error);
 		};
 
+
+
 		this.$router.beforeHooks.push((to, from, next) => {
 			this.currentRouteName = this.$app.$route.name
+			// console.log('当前: ', this.currentRouteName)
+			// console.log(from.name, to.name)
+
 			this.debug && console.log(this.routePathList, '前')
-			if (isReplace) {
-				this.debug && console.log('replace')
-				isReplace = false
-				let len = this.routePathList.length
-				this.routePathList.splice(len === 0 ? 0:len - 1, 1, to.name)
-				next()
-				return
-			}
+
 			if (!this.routePathList.length) {
 				this.firstName = this.$app.$route.name
-				this.recordPath(!from.name)
+				this.recordPath(!from.name, from.name)
 				this.debug && console.log(this.routePathList, '初次')
 				next()
 				return;
 			}
 
 			if (!this.routePathList.includes(to.name)) {
-				this.recordPath(!from.name)
+				this.recordPath(!from.name, from.name)
 			} else {
-				this.shiftRoutePath(from.name)
+				this.shiftRoutePath()
 			}
+
+			if (isReplace) {
+				this.debug && console.log('replace')
+				isReplace = false
+				// let len = this.routePathList.length
+				this.routePathList = this.routePathList.filter(_ => _ !== from.name)
+			}
+
 			this.debug && console.log(this.routePathList, '后')
-			sessionStorage.setItem('ROUTE_STOCK', JSON.stringify(this.routePathList))
+			// sessionStorage.setItem('ROUTE_STOCK', JSON.stringify(this.routePathList))
 			next()
 		})
 		/*this.$router.afterHooks.unshift((to, from) => {
@@ -134,7 +141,7 @@ export class RouteManager {
 	}
 
 	// 设置临时仓库
-	setTempStor(){
+	setTempStor() {
 		/**
 		 * @typedef tempStorProps
 		 * @property   {Array}  routePathList
@@ -149,7 +156,7 @@ export class RouteManager {
 	}
 
 	/**@return {tempStorProps}*/
-	getTempStor(){
+	getTempStor() {
 		return JSON.parse(sessionStorage.getItem(this.tempStorKey))
 	}
 
@@ -164,15 +171,18 @@ export class RouteManager {
 	 * @param {string}  [name]  添加的路径
 	 */
 	recordPath(is_init, name) {
+		if (typeof is_init !== 'boolean') throw `请检查 is_init 类型, 当前类型非 Boolean`
 		let routeName = name || this.$app.$route.name
 		let s = new Set(this.routePathList)
-		// if (is_init) {
-		// 	s.add(routeName)
-		// 	this.routePathList = [...s]
-		// 	return;
-		// }
+		if (!routeName) return
+		if(s.has(routeName)) console.warn('标识符 route-name 是唯一的, 当前已有:'+routeName)
 		s.add(routeName)
 		this.routePathList = [...s]
+		/*return;
+		if (!routeName) return
+		if(this.routePathList[this.routePathList.length-1] !== routeName){
+			this.routePathList.push(routeName)
+		}*/
 	}
 
 	/**
@@ -186,9 +196,9 @@ export class RouteManager {
 			throw `未找到${ name }路由`
 		}
 		reverseArr.splice(0, index)
-		this.$router.go(-(index))
+		this.$router.go(-(index+1))
 		this.routePathList.splice(0, Infinity, ...reverseArr.reverse())
-		this.recordPath(false, name)
+		// this.recordPath(false, name)
 	}
 
 	/**
@@ -205,7 +215,7 @@ export class RouteManager {
 	 * @param {string}   [name]
 	 */
 	setHome(name) {
-		this.homeName = name ? name:this.currentRouteName
+		this.homeName = name ? name : this.currentRouteName
 	}
 
 }
