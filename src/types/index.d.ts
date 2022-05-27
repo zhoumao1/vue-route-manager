@@ -12,9 +12,13 @@ export type ManagerOptions = {
 export declare class RouteManagerInstance{
 	// constructor(options: ManagerOptions)
 	routePathList: Array;
-	
-	/** 根据 route name 返回到指定页面 */
-	backByName(name: string): void;
+
+	/**
+	 * 根据 route name 返回到指定页面
+	 * @param {string}   name  路由 name
+	 * @param {number}   [deviation = 1]  额外回退层级
+	 */
+	backToName(name: string, deviation?: number): void;
 
 	/** 返回到首页, 需要预先设置 home (用 setHome 方法设置 home name) */
 	backHome(): void;

@@ -52,7 +52,7 @@ export class RouteManager {
 
 		window.onbeforeunload = () => {
 			localStorage.setItem('__beforeunload', 'true')
-			this.setTempStor()
+			this._setTempStor()
 		}
 		window.onunload = () => {
 			localStorage.setItem('__unload', 'true')
@@ -60,7 +60,7 @@ export class RouteManager {
 		window.onload = () => {
 			let arr = this._refreshStateArr.map(_ => localStorage.getItem(_) === 'true')
 			if (arr.every(_ => _)) {
-				Object.assign(this, this.getTempStor())
+				Object.assign(this, this._getTempStor())
 				this._refreshStateArr.forEach(item => {
 					localStorage.removeItem(item)
 				})
@@ -99,7 +99,7 @@ export class RouteManager {
 			if (!this.routePathList.includes(to.name)) {
 				this.recordPath(!from.name, from.name)
 			} else {
-				this.shiftRoutePath()
+				this._removePath()
 			}
 
 			if (isReplace) {
@@ -113,35 +113,10 @@ export class RouteManager {
 			// sessionStorage.setItem('ROUTE_STOCK', JSON.stringify(this.routePathList))
 			next()
 		})
-		/*this.$router.afterHooks.unshift((to, from) => {
-			this.currentRouteName = this.$app.$route.name
-			this.debug && console.log(this.routePathList, '前')
-			if (isReplace) {
-				this.debug && console.log('replace')
-				isReplace = false
-				let len = this.routePathList.length
-				this.routePathList.splice(len === 0 ? 0:len - 1, 1, to.name)
-				return
-			}
-			if (!this.routePathList.length) {
-				this.firstName = this.$app.$route.name
-				this.recordPath(!from.name)
-				this.debug && console.log(this.routePathList, '初次')
-				return;
-			}
-			console.log(this.routePathList, to.name)
-
-			if (!this.routePathList.includes(to.name)) {
-				this.recordPath(!from.name)
-			} else {
-				this.shiftRoutePath(from.name)
-			}
-			this.debug && console.log(this.routePathList, '后')
-		})*/
 	}
 
 	// 设置临时仓库
-	setTempStor() {
+	_setTempStor() {
 		/**
 		 * @typedef tempStorProps
 		 * @property   {Array}  routePathList
@@ -156,11 +131,11 @@ export class RouteManager {
 	}
 
 	/**@return {tempStorProps}*/
-	getTempStor() {
+	_getTempStor() {
 		return JSON.parse(sessionStorage.getItem(this.tempStorKey))
 	}
 
-	shiftRoutePath() {
+	_removePath() {
 		if (!this.routePathList) return
 		this.routePathList.pop()
 	}
@@ -178,35 +153,34 @@ export class RouteManager {
 		if(s.has(routeName)) console.warn('标识符 route-name 是唯一的, 当前已有:'+routeName)
 		s.add(routeName)
 		this.routePathList = [...s]
-		/*return;
-		if (!routeName) return
-		if(this.routePathList[this.routePathList.length-1] !== routeName){
-			this.routePathList.push(routeName)
-		}*/
+	}
+
+	backByName(name, deviation = 1) {
+		this.backToName(name, deviation)
 	}
 
 	/**
 	 * 根据 route name 返回到指定页面
 	 * @param {string}   name  路由 name
+	 * @param {number}   [deviation = 1]  额外回退层级
 	 */
-	backByName(name) {
+	backToName(name, deviation = 1){
 		let reverseArr = this.routePathList.reverse()
 		let index = reverseArr.indexOf(name)
 		if (index < 0) {
 			throw `未找到${ name }路由`
 		}
-		reverseArr.splice(0, index)
-		this.$router.go(-(index+1))
+		reverseArr.splice(0, index+deviation)
+		this.$router.go(-(index+deviation))
 		this.routePathList.splice(0, Infinity, ...reverseArr.reverse())
-		// this.recordPath(false, name)
-	}
+	};
 
 	/**
 	 * 返回到首页, 需要预先设置 home (用 setHome 方法设置 home name)
 	 */
 	backHome() {
 		if (!this.homeName) throw '未找到 home name (请用 setHome 方法设置 home name)'
-		this.backByName(this.homeName)
+		this.backToName(this.homeName)
 		this.homeName = null
 	}
 

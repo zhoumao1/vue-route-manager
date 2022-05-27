@@ -1,6 +1,6 @@
 {
 	"name": "vue-route-manager",
-	"version": "1.0.3-beta.2",
+	"version": "1.0.3-beta.3",
 	"main": "src/main.js",
 	"scripts": {
 		"serve": "vue-cli-service serve",
