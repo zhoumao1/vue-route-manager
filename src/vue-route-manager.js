@@ -35,9 +35,7 @@ export class RouteManager {
 			this.init()
 		})
 
-		this.tempStorKey = 'tempRouteManagerStor'
-		/**@type {'push'|'back'|'replace'|'forward'}*/
-		this.routeAction = ''
+		this._storeName = '__TMP_ROUTE_MANAGER__'
 	}
 
 	static getInstance(params) {
@@ -71,7 +69,6 @@ export class RouteManager {
 		let isReplace = false
 		this.$router.replace = (location, onResolve, onReject) => {
 			isReplace = true
-			this.routeAction = 'replace'
 			if (onResolve || onReject) {
 				return routerReplace(location, onResolve, onReject);
 			}
@@ -79,25 +76,28 @@ export class RouteManager {
 				.catch(error => error);
 		};
 
-
-
 		this.$router.beforeHooks.push((to, from, next) => {
-			this.currentRouteName = this.$app.$route.name
-			// console.log('当前: ', this.currentRouteName)
-			// console.log(from.name, to.name)
+			this.currentRouteName = to.name
 
 			this.debug && console.log(this.routePathList, '前')
 
 			if (!this.routePathList.length) {
-				this.firstName = this.$app.$route.name
-				this.recordPath(!from.name, from.name)
+				if (isReplace) {
+					isReplace = false
+					this.firstName = to.name
+				} else {
+					this.firstName = from.name
+					this.recordPath(from.name)
+				}
+				/*this.firstName = this.$app.$route.name
+				this.recordPath(from.name)*/
 				this.debug && console.log(this.routePathList, '初次')
 				next()
 				return;
 			}
 
 			if (!this.routePathList.includes(to.name)) {
-				this.recordPath(!from.name, from.name)
+				this.recordPath(from.name)
 			} else {
 				this._removePath()
 			}
@@ -105,7 +105,6 @@ export class RouteManager {
 			if (isReplace) {
 				this.debug && console.log('replace')
 				isReplace = false
-				// let len = this.routePathList.length
 				this.routePathList = this.routePathList.filter(_ => _ !== from.name)
 			}
 
@@ -123,7 +122,7 @@ export class RouteManager {
 		 * @property   {string}  homeName
 		 * @property   {string}  firstName
 		 */
-		sessionStorage.setItem(this.tempStorKey, JSON.stringify({
+		sessionStorage.setItem(this._storeName, JSON.stringify({
 			routePathList: this.routePathList,
 			homeName: this.homeName || this.firstName,
 			firstName: this.firstName
@@ -132,7 +131,7 @@ export class RouteManager {
 
 	/**@return {tempStorProps}*/
 	_getTempStor() {
-		return JSON.parse(sessionStorage.getItem(this.tempStorKey))
+		return JSON.parse(sessionStorage.getItem(this._storeName))
 	}
 
 	_removePath() {
@@ -142,15 +141,13 @@ export class RouteManager {
 
 	/**
 	 * 记录路由路径
-	 * @param {boolean}  is_init  是否需要初始化
 	 * @param {string}  [name]  添加的路径
 	 */
-	recordPath(is_init, name) {
-		if (typeof is_init !== 'boolean') throw `请检查 is_init 类型, 当前类型非 Boolean`
+	recordPath(name) {
 		let routeName = name || this.$app.$route.name
 		let s = new Set(this.routePathList)
 		if (!routeName) return
-		if(s.has(routeName)) console.warn('标识符 route-name 是唯一的, 当前已有:'+routeName)
+		if (s.has(routeName)) console.warn('标识符 route-name 是唯一的, 当前已有:' + routeName)
 		s.add(routeName)
 		this.routePathList = [...s]
 	}
@@ -164,16 +161,16 @@ export class RouteManager {
 	 * @param {string}   name  路由 name
 	 * @param {number}   [deviation = 1]  额外回退层级
 	 */
-	backToName(name, deviation = 1){
+	backToName(name, deviation = 1) {
 		let reverseArr = this.routePathList.reverse()
 		let index = reverseArr.indexOf(name)
 		if (index < 0) {
 			throw `未找到${ name }路由`
 		}
-		reverseArr.splice(0, index+deviation)
-		this.$router.go(-(index+deviation))
+		reverseArr.splice(0, index + deviation)
+		this.$router.go(-(index + deviation))
 		this.routePathList.splice(0, Infinity, ...reverseArr.reverse())
-	};
+	}
 
 	/**
 	 * 返回到首页, 需要预先设置 home (用 setHome 方法设置 home name)
